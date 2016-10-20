@@ -3,7 +3,6 @@ package com.ryanharter.auto.value.moshi;
 import com.google.auto.service.AutoService;
 import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.AutoValueExtension;
-import com.google.common.collect.ImmutableSet;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
@@ -17,6 +16,8 @@ import com.squareup.moshi.Moshi;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +32,6 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.NoType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
@@ -55,7 +55,10 @@ public class AutoValueMoshiAdapterFactoryProcessor extends AbstractProcessor {
 
   @Override
   public Set<String> getSupportedAnnotationTypes() {
-    return ImmutableSet.of(AutoValue.class.getName(), MoshiAdapterFactory.class.getName());
+    LinkedHashSet<String> sets = new LinkedHashSet<>(4);
+    sets.add(AutoValue.class.getName());
+    sets.add(MoshiAdapterFactory.class.getName());
+    return Collections.unmodifiableSet(sets);
   }
 
   @Override
@@ -120,10 +123,15 @@ public class AutoValueMoshiAdapterFactoryProcessor extends AbstractProcessor {
     ParameterSpec moshi = ParameterSpec.builder(Moshi.class, "moshi").build();
     ParameterizedTypeName result = ParameterizedTypeName.get(ClassName.get(JsonAdapter.class),
         WildcardTypeName.subtypeOf(TypeName.OBJECT));
+
+    LinkedHashSet<ParameterSpec> parameterSpecSet = new LinkedHashSet<>(6);
+    parameterSpecSet.add(type);
+    parameterSpecSet.add(annotations);
+    parameterSpecSet.add(moshi);
     MethodSpec.Builder create = MethodSpec.methodBuilder("create")
         .addModifiers(PUBLIC)
         .addAnnotation(Override.class)
-        .addParameters(ImmutableSet.of(type, annotations, moshi))
+        .addParameters(Collections.unmodifiableSet(parameterSpecSet))
         .returns(result);
 
     for (int i = 0; i < elements.size(); i++) {
